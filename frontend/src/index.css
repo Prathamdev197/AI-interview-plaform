@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", system-ui, sans-serif;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: radial-gradient(circle at 50% 0%, #152540 0%, #0c1626 100%);
+  background-attachment: fixed;
+  color: #f8fafc;
+  min-height: 100vh;
+  margin: 0;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+*::selection {
+  background-color: #3b82f6;
+  color: #ffffff;
+}
