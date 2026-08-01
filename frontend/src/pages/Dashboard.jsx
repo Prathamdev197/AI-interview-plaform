@@ -96,13 +96,15 @@ const Dashboard = () => {
                     </h1>
                     <p className="text-xs text-[#78716C] mt-0.5">Select a role track or custom topic to launch a session</p>
                 </div>
-                <div className="flex items-center gap-1.5 text-xs text-[#78716C] bg-white border border-[#E7E5E4] px-3 py-1.5 rounded-md self-start sm:self-auto font-mono">
-                    <Calendar className="w-3.5 h-3.5 text-stone-400" />
+
+                {/* Date Badge — Clean Black Font Text */}
+                <div className="flex items-center gap-2 text-xs font-semibold text-[#1C1917] bg-white border border-[#E7E5E4] px-3.5 py-1.5 rounded-md self-start sm:self-auto font-mono">
+                    <Calendar className="w-3.5 h-3.5 text-stone-500" />
                     <span>{new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                 </div>
             </div>
 
-            {/* Stats — Single Inline Strip (NOT 3 boxed cards) */}
+            {/* Stats Strip */}
             <div className="bg-white border border-[#E7E5E4] rounded-lg px-6 py-4 flex flex-col sm:flex-row sm:items-center divide-y sm:divide-y-0 sm:divide-x divide-[#E7E5E4]">
                 <div className="flex-1 py-2 sm:py-0 sm:pr-6 flex items-center gap-3 text-left">
                     <Trophy className="w-4 h-4 text-stone-400 shrink-0" />
