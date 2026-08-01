@@ -1,12 +1,12 @@
 const StatCard = ({ title, value, icon }) => {
     return (
-        <div className="bg-[#0e192c] border border-[#1b2a47] rounded-xl p-5 flex items-center gap-4 hover:border-blue-500/30 transition">
-            <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 shrink-0">
+        <div className="bg-white border border-[#E7E5E4] rounded-lg p-4 flex items-center gap-3">
+            <div className="p-2 rounded-md bg-stone-100 border border-[#E7E5E4] text-stone-500 shrink-0">
                 {icon}
             </div>
-            <div>
-                <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider">{title}</p>
-                <p className="text-xl font-bold text-white mt-0.5">{value}</p>
+            <div className="text-left">
+                <p className="text-[#78716C] text-[10px] font-medium uppercase tracking-wider">{title}</p>
+                <p className="text-base font-semibold text-[#1C1917] mt-0.5">{value}</p>
             </div>
         </div>
     );

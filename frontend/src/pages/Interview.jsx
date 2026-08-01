@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Loader2, Award, LogOut } from 'lucide-react';
+import { Loader2, Award, LogOut, ArrowLeft } from 'lucide-react';
 import API from '../api/axiosInstance';
 
 import QuestionCard from '../components/QuestionCard';
@@ -24,9 +24,7 @@ const Interview = () => {
     const [showQuitModal, setShowQuitModal] = useState(false);
 
     const [isMuted, setIsMuted] = useState(false);
-    const [isSpeaking, setIsSpeaking] = useState(false);
     const utteranceRef = useRef(null);
-    const speechTokenRef = useRef(0);
 
     useEffect(() => {
         const fetchInterview = async () => {
@@ -53,99 +51,69 @@ const Interview = () => {
         fetchInterview();
     }, [id]);
 
-    const speakQuestion = useCallback((rawText, speechToken) => {
+    const speakQuestion = useCallback((rawText) => {
         const synth = window.speechSynthesis;
         if (!synth) return;
         synth.cancel();
 
+        if (isMuted) return;
+
         const cleanText = rawText
-            .replace(/```[\s\S]*?```/g, ' ')
-            .replace(/[`*#_~]/g, ' ')
+            .replace(/`/g, '')
+            .replace(/[*_#]/g, '')
             .trim();
 
-        const u = new SpeechSynthesisUtterance(cleanText);
-        utteranceRef.current = u;
-        u.rate = 0.95;
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        utterance.lang = 'en-US';
 
-        u.onstart = () => {
-            if (speechTokenRef.current !== speechToken) return;
-            setIsSpeaking(true);
-        };
-        u.onend = () => {
-            if (speechTokenRef.current !== speechToken) return;
-            setIsSpeaking(false);
-        };
-        u.onerror = () => {
-            if (speechTokenRef.current !== speechToken) return;
-            setIsSpeaking(false);
-        };
-
-        synth.speak(u);
-    }, []);
+        utteranceRef.current = utterance;
+        synth.speak(utterance);
+    }, [isMuted]);
 
     useEffect(() => {
-        if (loadingQuestions || isFinished || feedback || isMuted) return;
-        if (!questions.length || !questions[currentQIndex]) return;
-
-        const text = questions[currentQIndex].questionText;
-        if (!text) return;
-        const speechToken = ++speechTokenRef.current;
-
-        const timer = setTimeout(() => {
-            if (speechTokenRef.current === speechToken) {
-                speakQuestion(text, speechToken);
-            }
-        }, 400);
-
-        return () => {
-            clearTimeout(timer);
-            speechTokenRef.current += 1;
-            window.speechSynthesis?.cancel();
-            setIsSpeaking(false);
-        };
-    }, [currentQIndex, loadingQuestions, isFinished, feedback, isMuted, speakQuestion]);
-
-    const toggleMute = () => {
-        if (!isMuted) {
-            speechTokenRef.current += 1;
-            window.speechSynthesis?.cancel();
-            setIsMuted(true);
-            setIsSpeaking(false);
-        } else {
-            setIsMuted(false);
-            const q = questions[currentQIndex];
-            if (q?.questionText && !feedback) {
-                speakQuestion(q.questionText, ++speechTokenRef.current);
+        if (!loadingQuestions && questions.length > 0 && !isFinished && !feedback) {
+            const currentQ = questions[currentQIndex];
+            if (currentQ?.questionText) {
+                speakQuestion(currentQ.questionText);
             }
         }
+        return () => {
+            window.speechSynthesis?.cancel();
+        };
+    }, [currentQIndex, questions, loadingQuestions, isFinished, feedback, speakQuestion]);
+
+    const handleToggleMute = () => {
+        setIsMuted((prev) => {
+            const nextState = !prev;
+            if (nextState) {
+                window.speechSynthesis?.cancel();
+            } else if (questions[currentQIndex]?.questionText) {
+                speakQuestion(questions[currentQIndex].questionText);
+            }
+            return nextState;
+        });
     };
 
-    const handleSubmitAnswer = async (explicitText = '') => {
-        speechTokenRef.current += 1;
+    const handleSubmitAnswer = async (ans) => {
+        if (!ans.trim()) return;
         window.speechSynthesis?.cancel();
-        setIsSpeaking(false);
-
-        let answerToSubmit = typeof explicitText === 'string' && explicitText.trim() ? explicitText.trim() : userAnswer.trim();
-        if (!answerToSubmit) return;
-
         setLoading(true);
-        setFeedback(null);
         setError('');
 
         try {
             const { data } = await API.post(`/interviews/${id}/answer`, {
                 questionIndex: currentQIndex,
-                userAnswer: answerToSubmit,
+                userAnswer: ans
             });
+
             setFeedback(data.evaluation);
-            
-            const newOverall = Number(data.overallScore) || 0;
-            const newTotalAnswered = Number(data.answeredCount) || 1;
-            setTotalScore(newOverall * newTotalAnswered);
-            setAnsweredCount(newTotalAnswered);
+            setTotalScore((prev) => prev + data.evaluation.score);
+            setAnsweredCount(data.answeredCount);
         } catch (err) {
-            console.error('Failed to submit answer:', err);
-            setError(err.response?.data?.message || 'Failed to submit answer.');
+            console.error('Error submitting answer:', err);
+            setError(err.response?.data?.message || 'Failed to evaluate answer. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -165,9 +133,9 @@ const Interview = () => {
 
     if (loadingQuestions) {
         return (
-            <div className="min-h-screen pt-24 flex flex-col items-center justify-center bg-[#0f172a]">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-500 mb-3" />
-                <p className="text-xs text-slate-300 font-medium uppercase tracking-wider">Loading Interview Room...</p>
+            <div className="min-h-screen pt-24 flex flex-col items-center justify-center bg-[#FAFAF9]">
+                <Loader2 className="w-6 h-6 animate-spin text-orange-600 mb-2" />
+                <p className="text-xs text-[#78716C]">Loading interview session...</p>
             </div>
         );
     }
@@ -179,36 +147,36 @@ const Interview = () => {
 
         return (
             <div className="min-h-screen pt-24 pb-12 flex items-center justify-center px-4">
-                <div className="bg-[#0e192c] border border-[#1b2a47] rounded-3xl p-8 max-w-lg w-full text-center shadow-xl space-y-6">
-                    <div className="w-16 h-16 rounded-2xl bg-blue-600/20 border border-blue-500/30 text-blue-400 flex items-center justify-center mx-auto shadow-sm">
-                        <Award className="w-8 h-8" />
+                <div className="bg-white border border-[#E7E5E4] rounded-lg p-8 max-w-md w-full text-center space-y-6">
+                    <div className="w-12 h-12 rounded-md bg-stone-100 border border-[#E7E5E4] text-stone-600 flex items-center justify-center mx-auto">
+                        <Award className="w-6 h-6 text-orange-600" />
                     </div>
-                    <div>
-                        <h1 className="text-2xl font-extrabold text-white tracking-tight">Interview Complete!</h1>
-                        <p className="text-xs text-slate-300 mt-1">Here is your technical performance score</p>
+                    <div className="space-y-1">
+                        <h1 className="text-xl font-semibold text-[#1C1917]">Session Completed</h1>
+                        <p className="text-xs text-[#78716C]">Technical evaluation summary</p>
                     </div>
 
-                    <div className="bg-[#09101d] border border-[#1b2a47] rounded-2xl p-6">
-                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Average Tech Score</p>
-                        <p className="text-4xl font-extrabold text-white">{avgScore} <span className="text-sm text-slate-400 font-normal">/ 10</span></p>
+                    <div className="bg-[#FAFAF9] border border-[#E7E5E4] rounded-md p-5">
+                        <p className="text-[11px] font-medium text-[#78716C] uppercase tracking-wider">Average Tech Score</p>
+                        <p className="text-3xl font-semibold text-[#1C1917] mt-0.5">{avgScore} <span className="text-xs text-[#78716C] font-normal">/ 10</span></p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3 text-left">
-                        <div className="bg-[#09101d] border border-[#1b2a47] rounded-xl p-3.5">
-                            <p className="text-[10px] font-semibold text-slate-400 uppercase">Topic Track</p>
-                            <p className="text-xs font-bold text-white mt-0.5 truncate">{interview?.topic}</p>
+                        <div className="bg-[#FAFAF9] border border-[#E7E5E4] rounded-md p-3">
+                            <p className="text-[10px] font-medium text-[#78716C] uppercase">Topic Track</p>
+                            <p className="text-xs font-semibold text-[#1C1917] mt-0.5 truncate">{interview?.topic}</p>
                         </div>
-                        <div className="bg-[#09101d] border border-[#1b2a47] rounded-xl p-3.5">
-                            <p className="text-[10px] font-semibold text-slate-400 uppercase">Questions Answered</p>
-                            <p className="text-xs font-bold text-white mt-0.5">{answeredCount} of {questions.length}</p>
+                        <div className="bg-[#FAFAF9] border border-[#E7E5E4] rounded-md p-3">
+                            <p className="text-[10px] font-medium text-[#78716C] uppercase">Answered</p>
+                            <p className="text-xs font-semibold text-[#1C1917] mt-0.5">{answeredCount} of {questions.length}</p>
                         </div>
                     </div>
 
                     <button
                         onClick={() => navigate(`/results/${id}`)}
-                        className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3.5 rounded-xl transition shadow-sm text-xs flex items-center justify-center gap-2 cursor-pointer"
+                        className="w-full bg-orange-600 hover:bg-orange-700 text-white font-medium py-2.5 rounded-md text-xs transition cursor-pointer"
                     >
-                        <span>View Detailed Feedback & Evaluation</span>
+                        View Full Results Breakdown
                     </button>
                 </div>
             </div>
@@ -218,86 +186,75 @@ const Interview = () => {
     const currentQ = questions[currentQIndex];
 
     return (
-        <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 max-w-4xl mx-auto space-y-6">
-            
-            {/* Header Controls */}
-            <div className="bg-[#0e192c] border border-[#1b2a47] rounded-2xl p-4 sm:p-5 shadow-sm flex items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-sm sm:text-base font-bold text-white tracking-tight uppercase">
-                        {interview?.topic} INTERVIEW
-                    </h1>
-                    <p className="text-[10px] font-medium text-slate-400 mt-0.5">
-                        Question {currentQIndex + 1} of {questions.length} • {interview?.difficulty} Mode
-                    </p>
-                </div>
+        <div className="min-h-screen pt-20 pb-16 px-4 sm:px-6 max-w-3xl mx-auto space-y-6">
 
-                <div className="flex items-center gap-3">
-                    <button
-                        onClick={() => setShowQuitModal(true)}
-                        className="p-2 rounded-xl bg-[#09101d] border border-[#1b2a47] text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer"
-                        title="Quit Interview"
-                    >
-                        <LogOut className="w-4 h-4" />
-                    </button>
+            {/* Header Toolbar */}
+            <div className="flex items-center justify-between border-b border-[#E7E5E4] pb-4">
+                <button
+                    onClick={() => setShowQuitModal(true)}
+                    className="flex items-center gap-1.5 text-xs text-[#78716C] hover:text-[#1C1917] transition cursor-pointer"
+                >
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    <span>Exit Session</span>
+                </button>
+
+                <div className="text-xs text-[#78716C] font-mono">
+                    Question <span className="text-[#1C1917] font-semibold">{currentQIndex + 1}</span> of {questions.length}
                 </div>
             </div>
 
-            {/* Question & Answer Component Stack */}
-            <div className="bg-[#0e192c] border border-[#1b2a47] rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+            {/* Question Card */}
+            {currentQ && (
                 <QuestionCard
-                    questionText={currentQ?.questionText}
+                    questionText={currentQ.questionText}
                     questionIndex={currentQIndex}
                     isMuted={isMuted}
-                    isSpeaking={isSpeaking}
-                    onToggleMute={toggleMute}
+                    onToggleMute={handleToggleMute}
                 />
+            )}
 
-                <div className="h-px bg-[#1b2a47] my-4" />
-
-                <AnswerInput
-                    userAnswer={userAnswer}
-                    setUserAnswer={setUserAnswer}
-                    feedback={feedback}
-                    loading={loading}
-                    error={error}
-                    onSubmit={handleSubmitAnswer}
-                    onNext={handleNextQuestion}
-                    currentQIndex={currentQIndex}
-                    questionsLength={questions.length}
-                />
-            </div>
+            {/* Answer Input Card */}
+            <AnswerInput
+                userAnswer={userAnswer}
+                setUserAnswer={setUserAnswer}
+                feedback={feedback}
+                loading={loading}
+                error={error}
+                onSubmit={handleSubmitAnswer}
+                onNext={handleNextQuestion}
+                currentQIndex={currentQIndex}
+                questionsLength={questions.length}
+            />
 
             {/* Quit Confirmation Modal */}
             {showQuitModal && (
-                <div className="fixed inset-0 bg-[#060b13]/80 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-                    <div className="bg-[#0e192c] border border-[#1b2a47] rounded-3xl p-6 max-w-sm w-full text-center space-y-4 shadow-xl">
-                        <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mx-auto">
-                            <LogOut className="w-6 h-6" />
-                        </div>
-                        <h3 className="text-base font-bold text-white">Quit Interview Session?</h3>
-                        <p className="text-xs text-slate-400">Unanswered questions will not be scored.</p>
-                        
-                        <div className="flex gap-3 pt-2">
+                <div className="fixed inset-0 z-50 bg-stone-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+                    <div className="bg-white border border-[#E7E5E4] rounded-lg p-6 max-w-sm w-full space-y-4 text-left shadow-lg">
+                        <h3 className="text-sm font-semibold text-[#1C1917]">Exit Interview Session?</h3>
+                        <p className="text-xs text-[#78716C] leading-relaxed">
+                            Your current session progress will be saved up to the last answered question.
+                        </p>
+
+                        <div className="flex justify-end gap-2 pt-2">
                             <button
                                 onClick={() => setShowQuitModal(false)}
-                                className="flex-1 py-2.5 rounded-xl bg-[#09101d] hover:bg-[#14233c] text-white text-xs font-semibold transition cursor-pointer border border-[#1b2a47]"
+                                className="px-3.5 py-1.5 rounded-md border border-[#E7E5E4] text-xs font-medium text-[#1C1917] hover:bg-stone-50 cursor-pointer"
                             >
-                                Resume
+                                Continue Session
                             </button>
                             <button
                                 onClick={() => {
-                                    setShowQuitModal(false);
-                                    setIsFinished(true);
+                                    window.speechSynthesis?.cancel();
+                                    navigate('/dashboard');
                                 }}
-                                className="flex-1 bg-rose-600 hover:bg-rose-700 text-white py-2.5 rounded-xl text-xs font-semibold transition shadow-sm cursor-pointer"
+                                className="px-3.5 py-1.5 rounded-md bg-rose-600 hover:bg-rose-700 text-white text-xs font-medium cursor-pointer"
                             >
-                                Quit Session
+                                Exit
                             </button>
                         </div>
                     </div>
                 </div>
             )}
-
         </div>
     );
 };

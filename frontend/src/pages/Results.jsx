@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, XCircle, Loader2, Award } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, XCircle, Loader2, Award } from 'lucide-react';
 import API from '../api/axiosInstance';
 
 const Results = () => {
@@ -25,19 +25,19 @@ const Results = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen pt-24 flex items-center justify-center bg-[#0f172a]">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+            <div className="min-h-screen pt-24 flex items-center justify-center bg-[#FAFAF9]">
+                <Loader2 className="w-6 h-6 animate-spin text-orange-600" />
             </div>
         );
     }
 
     if (!interview) {
         return (
-            <div className="min-h-screen pt-24 flex flex-col items-center justify-center bg-[#0f172a] text-center px-4">
-                <p className="text-sm font-bold text-white">Interview results not found.</p>
+            <div className="min-h-screen pt-24 flex flex-col items-center justify-center bg-[#FAFAF9] text-center px-4">
+                <p className="text-sm font-semibold text-[#1C1917]">Interview results not found.</p>
                 <button
                     onClick={() => navigate('/dashboard')}
-                    className="mt-4 px-6 py-2.5 bg-[#1e293b] border border-[#334155] text-white rounded-xl text-xs font-semibold"
+                    className="mt-4 px-4 py-2 bg-white border border-[#E7E5E4] text-[#1C1917] hover:bg-stone-50 rounded-md text-xs font-medium"
                 >
                     Back to Dashboard
                 </button>
@@ -46,68 +46,71 @@ const Results = () => {
     }
 
     return (
-        <div className="min-h-screen pt-24 px-4 sm:px-6 pb-20 max-w-4xl mx-auto space-y-6">
+        <div className="min-h-screen pt-20 px-4 sm:px-6 pb-20 max-w-4xl mx-auto space-y-6 text-left">
 
             <button
                 onClick={() => navigate('/dashboard')}
-                className="flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white transition cursor-pointer"
+                className="flex items-center gap-1.5 text-xs font-medium text-[#78716C] hover:text-[#1C1917] transition cursor-pointer"
             >
-                <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+                <ArrowLeft className="w-3.5 h-3.5" /> Back to Dashboard
             </button>
 
-            {/* Score Summary */}
-            <div className="bg-[#0e192c] border border-[#1b2a47] rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-sm">
-                <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-xs font-bold text-blue-400 uppercase tracking-wider">
-                        <Award className="w-4 h-4" /> Technical Evaluation
+            {/* Score Summary Banner */}
+            <div className="bg-white border border-[#E7E5E4] rounded-lg p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                    <div className="flex items-center gap-1.5 text-xs font-medium text-orange-600 uppercase tracking-wider">
+                        <Award className="w-3.5 h-3.5 text-orange-600" />
+                        <span>Evaluation Summary</span>
                     </div>
-                    <h1 className="text-xl sm:text-2xl font-extrabold text-white">{interview.topic}</h1>
-                    <p className="text-xs text-slate-400">{interview.difficulty} Level • {new Date(interview.createdAt).toLocaleDateString()}</p>
+                    <h1 className="text-xl font-semibold text-[#1C1917] tracking-tight">{interview.topic}</h1>
+                    <p className="text-xs text-[#78716C]">{interview.difficulty} Level • {new Date(interview.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                 </div>
-                <div className="bg-[#09101d] border border-[#1b2a47] rounded-xl p-5 text-center shrink-0 min-w-[140px]">
-                    <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Average Score</p>
-                    <p className="text-3xl font-extrabold text-white">
-                        {(Number(interview.overallScore) || 0).toFixed(1)} <span className="text-xs text-slate-400 font-normal">/ 10</span>
+
+                <div className="bg-[#FAFAF9] border border-[#E7E5E4] rounded-md p-4 text-center shrink-0 min-w-[130px]">
+                    <p className="text-[10px] font-medium text-[#78716C] uppercase tracking-wider mb-0.5">Average Score</p>
+                    <p className="text-2xl font-semibold text-[#1C1917]">
+                        {(Number(interview.overallScore) || 0).toFixed(1)} <span className="text-xs text-[#78716C] font-normal">/ 10</span>
                     </p>
                 </div>
             </div>
 
-            {/* Answers */}
+            {/* Answers Breakdown */}
             <div className="space-y-4">
-                <h2 className="text-base font-bold text-white px-1">Detailed Question Feedback</h2>
+                <h2 className="text-sm font-semibold text-[#1C1917]">Detailed Evaluation Breakdown</h2>
 
                 {interview.answers?.map((answer, idx) => (
                     <div
                         key={idx}
-                        className={`bg-[#0e192c] border rounded-2xl p-6 space-y-4 ${
-                            answer.score >= 7 ? 'border-emerald-500/40' : answer.score >= 4 ? 'border-amber-500/40' : 'border-rose-500/40'
+                        className={`bg-white border rounded-lg p-5 space-y-3.5 ${
+                            answer.score >= 7 ? 'border-emerald-300' : answer.score >= 4 ? 'border-amber-300' : 'border-rose-300'
                         }`}
                     >
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#1b2a47]">
-                            <h3 className="font-bold text-sm text-white">Q{idx + 1}: {answer.questionText}</h3>
-                            <div className="flex items-center gap-1.5 shrink-0 bg-[#09101d] px-3.5 py-1.5 rounded-full border border-[#1b2a47]">
-                                {answer.score >= 7
-                                    ? <CheckCircle className="w-4 h-4 text-emerald-400" />
-                                    : <XCircle className="w-4 h-4 text-rose-400" />
-                                }
-                                <span className="text-xs font-bold text-white">{answer.score} / 10</span>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#E7E5E4]">
+                            <h3 className="font-semibold text-xs text-[#1C1917]">Q{idx + 1}: {answer.questionText}</h3>
+                            <div className="flex items-center gap-1.5 shrink-0 bg-[#FAFAF9] px-2.5 py-1 rounded-md border border-[#E7E5E4]">
+                                {answer.score >= 7 ? (
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                ) : (
+                                    <XCircle className="w-3.5 h-3.5 text-rose-600" />
+                                )}
+                                <span className="text-xs font-semibold text-[#1C1917]">{answer.score} / 10</span>
                             </div>
                         </div>
 
-                        <div className="bg-[#09101d] border border-[#1b2a47] rounded-xl p-4">
-                            <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Your Answer</p>
-                            <p className="text-xs text-slate-200 leading-relaxed">{answer.userAnswer || 'No answer submitted.'}</p>
+                        <div className="bg-[#FAFAF9] border border-[#E7E5E4] rounded-md p-3">
+                            <p className="text-[10px] font-medium text-[#78716C] uppercase tracking-wider mb-0.5">Your Answer</p>
+                            <p className="text-xs text-[#1C1917] leading-relaxed font-sans">{answer.userAnswer || 'No answer submitted.'}</p>
                         </div>
 
-                        <div className="bg-[#09101d]/60 p-4 rounded-xl border border-[#1b2a47]">
-                            <p className="text-[10px] font-bold text-blue-400 uppercase tracking-wider mb-1">AI Evaluation</p>
-                            <p className="text-xs text-slate-200 leading-relaxed">{answer.feedback}</p>
+                        <div className="bg-[#FAFAF9] p-3 rounded-md border border-[#E7E5E4]">
+                            <p className="text-[10px] font-semibold text-stone-600 uppercase tracking-wider mb-0.5">AI Evaluation</p>
+                            <p className="text-xs text-[#78716C] leading-relaxed">{answer.feedback}</p>
                         </div>
 
                         {answer.idealAnswer && (
-                            <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
-                                <p className="text-[10px] font-bold text-blue-400 uppercase tracking-wider mb-1">Model Answer</p>
-                                <p className="text-xs text-slate-200 leading-relaxed">{answer.idealAnswer}</p>
+                            <div className="bg-orange-50/30 border border-orange-200 rounded-md p-3">
+                                <p className="text-[10px] font-semibold text-orange-600 uppercase tracking-wider mb-0.5">Model Answer</p>
+                                <p className="text-xs text-[#1C1917] leading-relaxed">{answer.idealAnswer}</p>
                             </div>
                         )}
                     </div>

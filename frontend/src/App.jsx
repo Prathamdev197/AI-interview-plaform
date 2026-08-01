@@ -12,19 +12,18 @@ import Results from './pages/Results';
 const PrivateRoute = ({ children }) => {
     const { user, loading } = useAuth();
     if (loading) return (
-        <div className="min-h-screen flex items-center justify-center bg-[#0f172a]">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+        <div className="min-h-screen flex items-center justify-center bg-[#FAFAF9]">
+            <Loader2 className="w-6 h-6 animate-spin text-orange-600" />
         </div>
     );
     return user ? children : <Navigate to="/login" />;
 };
 
-// Public Route wrapper (for unauthenticated users only)
 const PublicRoute = ({ children }) => {
     const { user, loading } = useAuth();
     if (loading) return (
-        <div className="min-h-screen flex items-center justify-center bg-[#0f172a]">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+        <div className="min-h-screen flex items-center justify-center bg-[#FAFAF9]">
+            <Loader2 className="w-6 h-6 animate-spin text-orange-600" />
         </div>
     );
     return user ? <Navigate to="/dashboard" /> : children;
@@ -33,7 +32,7 @@ const PublicRoute = ({ children }) => {
 function App() {
     return (
         <AuthProvider>
-            <div className="min-h-screen bg-[#0f172a] font-sans text-slate-100 selection:bg-blue-500/30">
+            <div className="min-h-screen bg-[#FAFAF9] font-sans text-[#1C1917]">
                 <Router>
                     <Navbar />
                     <Routes>

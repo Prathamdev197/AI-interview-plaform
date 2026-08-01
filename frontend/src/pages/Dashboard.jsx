@@ -4,16 +4,15 @@ import { useAuth } from '../context/AuthContext';
 import { Play, Calendar, Trophy, TrendingUp, Loader2, Code, Terminal, Globe, Database, Cpu, Layers } from 'lucide-react';
 import API from '../api/axiosInstance';
 
-import StatCard from '../components/StatCard';
 import PastInterviews from '../components/PastInterviews';
 
 const PRESET_ROLES = [
-    { name: 'Full Stack MERN Developer', topic: 'MERN Stack Developer', icon: <Code className="w-5 h-5 text-blue-400" /> },
-    { name: 'Frontend React Engineer', topic: 'Frontend React Engineer', icon: <Globe className="w-5 h-5 text-blue-400" /> },
-    { name: 'Backend Node.js Engineer', topic: 'Backend Node.js Engineer', icon: <Terminal className="w-5 h-5 text-blue-400" /> },
-    { name: 'Data Structures & Algorithms', topic: 'Data Structures & Algorithms', icon: <Database className="w-5 h-5 text-blue-400" /> },
-    { name: 'Python & AI Engineer', topic: 'Python & AI Engineer', icon: <Cpu className="w-5 h-5 text-blue-400" /> },
-    { name: 'System Design Architect', topic: 'System Design Architect', icon: <Layers className="w-5 h-5 text-blue-400" /> },
+    { name: 'Full Stack MERN Developer', topic: 'MERN Stack Developer', icon: <Code className="w-4 h-4 text-stone-500" /> },
+    { name: 'Frontend React Engineer', topic: 'Frontend React Engineer', icon: <Globe className="w-4 h-4 text-stone-500" /> },
+    { name: 'Backend Node.js Engineer', topic: 'Backend Node.js Engineer', icon: <Terminal className="w-4 h-4 text-stone-500" /> },
+    { name: 'Data Structures & Algorithms', topic: 'Data Structures & Algorithms', icon: <Database className="w-4 h-4 text-stone-500" /> },
+    { name: 'Python & AI Engineer', topic: 'Python & AI Engineer', icon: <Cpu className="w-4 h-4 text-stone-500" /> },
+    { name: 'System Design Architect', topic: 'System Design Architect', icon: <Layers className="w-4 h-4 text-stone-500" /> },
 ];
 
 const DIFFICULTIES = ['Easy', 'Medium', 'Hard'];
@@ -75,53 +74,71 @@ const Dashboard = () => {
         return sum + (ansCnt > 0 ? scoreSum / ansCnt : 0);
     }, 0);
     const avgScore = safeInterviews.length > 0 ? (Number(totalScoreSum) / safeInterviews.length).toFixed(1) : '0.0';
+    const totalQuestionsAnswered = safeInterviews.reduce((sum, i) => sum + (i.answers?.length || 0), 0);
 
     if (loading) {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-[#0f172a]">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-500 mb-3" />
-                <p className="text-xs text-slate-300 font-medium">Loading dashboard...</p>
+            <div className="min-h-screen pt-24 flex flex-col items-center justify-center bg-[#FAFAF9]">
+                <Loader2 className="w-6 h-6 animate-spin text-orange-600 mb-2" />
+                <p className="text-xs text-[#78716C]">Loading dashboard...</p>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen pt-28 pb-16 px-4 sm:px-6 max-w-6xl mx-auto space-y-8">
+        <div className="min-h-screen pt-20 pb-16 px-4 sm:px-6 max-w-5xl mx-auto space-y-8">
 
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#1b2a47] pb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E7E5E4] pb-5 text-left">
                 <div>
-                    <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
-                        Welcome back, <span className="text-blue-400">{user?.name || 'Candidate'}</span> 👋
+                    <h1 className="text-xl font-semibold text-[#1C1917] tracking-tight">
+                        Welcome, {user?.name || 'Candidate'}
                     </h1>
-                    <p className="text-xs text-slate-300 mt-1 font-medium">Select a role track to launch your AI Technical Interview</p>
+                    <p className="text-xs text-[#78716C] mt-0.5">Select a role track or custom topic to launch a session</p>
                 </div>
-                <div className="flex items-center gap-2 text-xs font-semibold text-slate-200 bg-[#0e192c] border border-[#1b2a47] px-4 py-2 rounded-xl self-start md:self-auto">
-                    <Calendar className="w-4 h-4 text-blue-400" />
+                <div className="flex items-center gap-1.5 text-xs text-[#78716C] bg-white border border-[#E7E5E4] px-3 py-1.5 rounded-md self-start sm:self-auto font-mono">
+                    <Calendar className="w-3.5 h-3.5 text-stone-400" />
                     <span>{new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                 </div>
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                <StatCard title="Total Interviews" value={safeInterviews.length} icon={<Trophy className="w-5 h-5 text-blue-400" />} />
-                <StatCard title="Average Score" value={`${avgScore} / 10`} icon={<TrendingUp className="w-5 h-5 text-emerald-400" />} />
-                <StatCard title="Questions Answered" value={safeInterviews.reduce((sum, i) => sum + (i.answers?.length || 0), 0)} icon={<Calendar className="w-5 h-5 text-blue-400" />} />
-            </div>
-
-            {/* Start Session Card */}
-            <div className="bg-[#0e192c] border border-[#1b2a47] rounded-2xl p-6 sm:p-8">
-
-                <div className="mb-6 pb-4 border-b border-[#1b2a47]">
-                    <h2 className="text-base font-bold text-white flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-blue-400" />
-                        Select Interview Track
-                    </h2>
-                    <p className="text-xs text-slate-400 mt-0.5">Choose a role or type a custom topic below</p>
+            {/* Stats — Single Inline Strip (NOT 3 boxed cards) */}
+            <div className="bg-white border border-[#E7E5E4] rounded-lg px-6 py-4 flex flex-col sm:flex-row sm:items-center divide-y sm:divide-y-0 sm:divide-x divide-[#E7E5E4]">
+                <div className="flex-1 py-2 sm:py-0 sm:pr-6 flex items-center gap-3 text-left">
+                    <Trophy className="w-4 h-4 text-stone-400 shrink-0" />
+                    <div>
+                        <p className="text-[11px] font-medium text-[#78716C] uppercase tracking-wider">Total Sessions</p>
+                        <p className="text-lg font-semibold text-[#1C1917] mt-0.5">{safeInterviews.length}</p>
+                    </div>
                 </div>
 
-                {/* Preset Roles */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                <div className="flex-1 py-2 sm:py-0 sm:px-6 flex items-center gap-3 text-left">
+                    <TrendingUp className="w-4 h-4 text-stone-400 shrink-0" />
+                    <div>
+                        <p className="text-[11px] font-medium text-[#78716C] uppercase tracking-wider">Average Score</p>
+                        <p className="text-lg font-semibold text-[#1C1917] mt-0.5">{avgScore} <span className="text-xs text-[#78716C] font-normal">/ 10</span></p>
+                    </div>
+                </div>
+
+                <div className="flex-1 py-2 sm:py-0 sm:pl-6 flex items-center gap-3 text-left">
+                    <Code className="w-4 h-4 text-stone-400 shrink-0" />
+                    <div>
+                        <p className="text-[11px] font-medium text-[#78716C] uppercase tracking-wider">Questions Answered</p>
+                        <p className="text-lg font-semibold text-[#1C1917] mt-0.5">{totalQuestionsAnswered}</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Start Session Section */}
+            <div className="bg-white border border-[#E7E5E4] rounded-lg p-6 text-left space-y-6">
+
+                <div className="border-b border-[#E7E5E4] pb-3">
+                    <h2 className="text-sm font-semibold text-[#1C1917]">Select Interview Track</h2>
+                    <p className="text-xs text-[#78716C] mt-0.5">Choose a pre-configured role or type a custom topic below</p>
+                </div>
+
+                {/* Preset Roles Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {PRESET_ROLES.map((role) => {
                         const isSelected = selectedTopic === role.topic && !customTopic.trim();
                         return (
@@ -129,49 +146,49 @@ const Dashboard = () => {
                                 key={role.name}
                                 type="button"
                                 onClick={() => { setSelectedTopic(role.topic); setCustomTopic(''); }}
-                                className={`flex items-center gap-3.5 p-4 rounded-xl border text-left transition cursor-pointer ${
+                                className={`flex items-center gap-3 p-3 rounded-md border text-left transition cursor-pointer ${
                                     isSelected
-                                        ? 'bg-blue-500/15 border-blue-400 text-white shadow-sm'
-                                        : 'bg-[#09101d] border-[#1b2a47] text-slate-300 hover:border-blue-500/40'
+                                        ? 'bg-orange-50/40 border-orange-600 text-[#1C1917]'
+                                        : 'bg-[#FAFAF9] border-[#E7E5E4] text-[#1C1917] hover:border-stone-400'
                                 }`}
                             >
-                                <div className={`p-2.5 rounded-xl ${isSelected ? 'bg-blue-500/20' : 'bg-[#0e192c]'}`}>
+                                <div className="p-1.5 rounded-md bg-white border border-[#E7E5E4] shrink-0">
                                     {role.icon}
                                 </div>
-                                <div>
-                                    <h3 className="text-xs font-bold text-white">{role.name}</h3>
-                                    <p className="text-[10px] text-slate-400 mt-0.5">Technical Track</p>
+                                <div className="min-w-0">
+                                    <h3 className="text-xs font-semibold truncate">{role.name}</h3>
+                                    <p className="text-[10px] text-[#78716C]">Technical Track</p>
                                 </div>
                             </button>
                         );
                     })}
                 </div>
 
-                {/* Custom Topic */}
-                <div className="space-y-2 mb-6">
-                    <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Or Type Custom Topic</label>
+                {/* Custom Topic Input */}
+                <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-[#78716C]">Or Custom Technical Topic</label>
                     <input
                         type="text"
                         value={customTopic}
                         onChange={(e) => setCustomTopic(e.target.value)}
-                        placeholder="e.g. GraphQL, Next.js, Kubernetes, Docker..."
-                        className="w-full bg-[#09101d] border border-[#1b2a47] rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-blue-400 transition"
+                        placeholder="e.g. GraphQL, Next.js, System Architecture..."
+                        className="w-full bg-[#FAFAF9] border border-[#E7E5E4] rounded-md px-3.5 py-2 text-xs text-[#1C1917] outline-none focus:border-orange-600 transition"
                     />
                 </div>
 
-                {/* Difficulty */}
-                <div className="space-y-2 mb-6">
-                    <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Difficulty Level</label>
-                    <div className="grid grid-cols-3 gap-3 max-w-md">
+                {/* Difficulty Selector */}
+                <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-[#78716C]">Difficulty Level</label>
+                    <div className="flex gap-2 max-w-xs">
                         {DIFFICULTIES.map((diff) => (
                             <button
                                 key={diff}
                                 type="button"
                                 onClick={() => setDifficulty(diff)}
-                                className={`py-2 rounded-xl text-xs font-semibold border transition cursor-pointer ${
+                                className={`flex-1 py-1.5 rounded-md text-xs font-medium border transition cursor-pointer ${
                                     difficulty === diff
-                                        ? 'bg-blue-600 border-blue-500 text-white shadow-sm'
-                                        : 'bg-[#09101d] border-[#1b2a47] text-slate-300 hover:bg-[#14233c]'
+                                        ? 'bg-orange-600 border-orange-600 text-white'
+                                        : 'bg-[#FAFAF9] border-[#E7E5E4] text-[#1C1917] hover:bg-stone-100'
                                 }`}
                             >
                                 {diff}
@@ -181,23 +198,23 @@ const Dashboard = () => {
                 </div>
 
                 {error && (
-                    <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl p-3 text-xs font-semibold mb-6">{error}</div>
+                    <div className="bg-rose-50 border border-rose-200 text-rose-700 rounded-md p-3 text-xs font-medium">{error}</div>
                 )}
 
                 <button
                     onClick={handleStartInterview}
                     disabled={startLoading}
-                    className="w-full sm:w-auto px-8 py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-xl transition shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                    className="w-full sm:w-auto px-6 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-medium text-xs rounded-md transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                     {startLoading ? (
-                        <><Loader2 className="w-4 h-4 animate-spin" /><span>Generating Questions...</span></>
+                        <><Loader2 className="w-3.5 h-3.5 animate-spin" /><span>Generating Questions...</span></>
                     ) : (
-                        <><Play className="w-4 h-4 fill-white" /><span>Start Interview Session</span></>
+                        <><Play className="w-3.5 h-3.5 fill-white" /><span>Start Interview Session</span></>
                     )}
                 </button>
             </div>
 
-            {/* Past Interviews */}
+            {/* Past Interviews List */}
             <PastInterviews
                 interviews={safeInterviews}
                 onViewDetails={(id) => navigate(`/results/${id}`)}
