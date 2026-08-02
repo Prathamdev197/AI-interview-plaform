@@ -1,13 +1,39 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+
+// Multi-Model Fallback Chain to prevent 429 Quota Exceeded errors
+// High Quota Models (500 RPD) prioritized when primary model hits limit
+const MODEL_CHAIN = [
+    'gemini-2.0-flash',
+    'gemini-3.1-flash-lite',
+    'gemini-[#3.5]-flash-lite',
+    'gemini-2.5-flash-lite',
+    'gemini-1.5-flash'
+].map(m => m.replace('[#3.5]', '3.5'));
+
+// Helper to attempt content generation across model fallback chain
+const generateWithFallback = async (prompt) => {
+    let lastError = null;
+    
+    for (const modelName of MODEL_CHAIN) {
+        try {
+            const model = genAI.getGenerativeModel({ model: modelName });
+            const result = await model.generateContent(prompt);
+            return result.response.text();
+        } catch (err) {
+            console.log(`Model ${modelName} attempt failed: ${err.message}. Trying next model...`);
+            lastError = err;
+        }
+    }
+    throw lastError;
+};
 
 // Clean error message extractor for Gemini API errors
 const handleGeminiError = (error) => {
     const errStr = error?.message || error?.toString() || '';
     if (errStr.includes('429') || errStr.includes('Quota exceeded') || errStr.includes('rate-limits')) {
-        return 'AI API daily limit reached. Please wait a minute or try again later.';
+        return 'AI API daily limit reached across models. Please wait a minute and try again.';
     }
     if (errStr.includes('404') || errStr.includes('not found')) {
         return 'AI model service unavailable. Please try again shortly.';
@@ -15,16 +41,15 @@ const handleGeminiError = (error) => {
     return 'Unable to process AI request. Please try again later.';
 };
 
-// 1. Generate Questions using Gemini AI
+// 1. Generate Questions using Gemini AI with Fallback Chain
 const generateInterviewQuestions = async (topic, difficulty, count = 10) => {
     try {
         const prompt = `Generate exactly ${count} ${difficulty}-level technical interview questions for topic: ${topic}.
 Return strictly JSON format: { "questions": [{ "questionText": "..." }] }`;
 
-        const result = await model.generateContent(prompt);
-        let rawText = result.response.text();
-        rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-        const data = JSON.parse(rawText);
+        const rawText = await generateWithFallback(prompt);
+        const cleanedText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+        const data = JSON.parse(cleanedText);
 
         if (!data.questions || data.questions.length === 0) {
             throw new Error('No questions returned from AI.');
@@ -37,7 +62,7 @@ Return strictly JSON format: { "questions": [{ "questionText": "..." }] }`;
     }
 };
 
-// 2. Evaluate Answer using Gemini AI
+// 2. Evaluate Answer using Gemini AI with Fallback Chain
 const evaluateAnswer = async (topic, difficulty, questionText, userAnswer) => {
     try {
         const prompt = `Evaluate this answer for ${topic} (${difficulty}):
@@ -51,10 +76,9 @@ Return strictly JSON format:
     "idealAnswer": "Expert model answer."
 }`;
 
-        const result = await model.generateContent(prompt);
-        let rawText = result.response.text();
-        rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-        const data = JSON.parse(rawText);
+        const rawText = await generateWithFallback(prompt);
+        const cleanedText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+        const data = JSON.parse(cleanedText);
 
         return {
             score: Math.min(10, Math.max(0, Number(data.score) || 0)),
