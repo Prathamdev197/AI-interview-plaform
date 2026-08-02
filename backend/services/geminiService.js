@@ -39,7 +39,7 @@ const handleGeminiError = (error) => {
     return 'Unable to process AI request. Please try again later.';
 };
 
-// 1. Generate Questions using Gemini AI with Fallback Chain
+// 1. Generate 10 Questions at once in a single API call
 const generateInterviewQuestions = async (topic, difficulty, count = 10) => {
     try {
         const prompt = `Generate exactly ${count} ${difficulty}-level technical interview questions for topic: ${topic}.
@@ -60,28 +60,38 @@ Return strictly JSON format: { "questions": [{ "questionText": "..." }] }`;
     }
 };
 
-// 2. Evaluate Answer using Gemini AI with Fallback Chain
+// 2. Evaluate Answer — Short, clean, concise feedback & model answer (No code dumps)
 const evaluateAnswer = async (topic, difficulty, questionText, userAnswer) => {
     try {
         const prompt = `Evaluate this answer for ${topic} (${difficulty}):
 Question: ${questionText}
-Answer: ${userAnswer}
+Candidate Answer: ${userAnswer}
+
+STRICT RULES FOR OUTPUT:
+- "feedback": 1-2 concise, clear sentences explaining what was good or missing.
+- "idealAnswer": 2-3 short, clear sentences explaining the ideal answer concept. Do NOT output code blocks, markdown tags, or full component code dumps. Keep it short and readable.
 
 Return strictly JSON format:
 {
     "score": 8,
-    "feedback": "Clear explanation.",
-    "idealAnswer": "Expert model answer."
+    "feedback": "Clear explanation of concepts.",
+    "idealAnswer": "Short 2-3 sentence model answer summary."
 }`;
 
         const rawText = await generateWithFallback(prompt);
         const cleanedText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
         const data = JSON.parse(cleanedText);
 
+        // Clean any code blocks if present
+        let cleanIdeal = (data.idealAnswer || '')
+            .replace(/```[a-z]*/g, '')
+            .replace(/```/g, '')
+            .trim();
+
         return {
             score: Math.min(10, Math.max(0, Number(data.score) || 0)),
             feedback: data.feedback || 'Answer evaluated.',
-            idealAnswer: data.idealAnswer || 'Model answer not available.'
+            idealAnswer: cleanIdeal || 'Model answer summary not available.'
         };
     } catch (error) {
         console.error("Gemini Evaluation Error:", error.message);
