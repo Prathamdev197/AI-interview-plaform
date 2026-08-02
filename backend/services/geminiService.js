@@ -2,15 +2,13 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// Multi-Model Fallback Chain to prevent 429 Quota Exceeded errors
-// High Quota Models (500 RPD) prioritized when primary model hits limit
+// Verified, active Free Tier models tested live against Google Gemini API
 const MODEL_CHAIN = [
-    'gemini-2.0-flash',
-    'gemini-3.1-flash-lite',
-    'gemini-[#3.5]-flash-lite',
+    'gemini-2.5-flash',
     'gemini-2.5-flash-lite',
-    'gemini-1.5-flash'
-].map(m => m.replace('[#3.5]', '3.5'));
+    'gemini-2.0-flash',
+    'gemini-2.0-flash-lite'
+];
 
 // Helper to attempt content generation across model fallback chain
 const generateWithFallback = async (prompt) => {
@@ -22,7 +20,7 @@ const generateWithFallback = async (prompt) => {
             const result = await model.generateContent(prompt);
             return result.response.text();
         } catch (err) {
-            console.log(`Model ${modelName} attempt failed: ${err.message}. Trying next model...`);
+            console.log(`Model ${modelName} attempt failed: ${err.message}. Trying next model in chain...`);
             lastError = err;
         }
     }
@@ -33,7 +31,7 @@ const generateWithFallback = async (prompt) => {
 const handleGeminiError = (error) => {
     const errStr = error?.message || error?.toString() || '';
     if (errStr.includes('429') || errStr.includes('Quota exceeded') || errStr.includes('rate-limits')) {
-        return 'AI API daily limit reached across models. Please wait a minute and try again.';
+        return 'AI API daily limit reached across all models. Please wait a minute and try again.';
     }
     if (errStr.includes('404') || errStr.includes('not found')) {
         return 'AI model service unavailable. Please try again shortly.';
